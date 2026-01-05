@@ -1,5 +1,6 @@
 package run.halo.moments;
 
+import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
@@ -22,10 +23,11 @@ import run.halo.app.infra.ExternalLinkProcessor;
  */
 @Component
 @RequiredArgsConstructor
-public class MomentCommentSubject implements CommentSubject<Moment> {
+class MomentCommentSubject implements CommentSubject<Moment> {
 
     private final ReactiveExtensionClient client;
     private final ExternalLinkProcessor externalLinkProcessor;
+    private final GroupVersionKind gvk = GroupVersionKind.fromExtension(Moment.class);
 
     @Override
     public Mono<Moment> get(String name) {
@@ -48,8 +50,7 @@ public class MomentCommentSubject implements CommentSubject<Moment> {
     @Override
     public boolean supports(Ref ref) {
         Assert.notNull(ref, "Subject ref must not be null.");
-        GroupVersionKind groupVersionKind =
-            new GroupVersionKind(ref.getGroup(), ref.getVersion(), ref.getKind());
-        return GroupVersionKind.fromExtension(Moment.class).equals(groupVersionKind);
+        return Objects.equals(gvk.group(), ref.getGroup())
+            && Objects.equals(gvk.kind(), ref.getKind());
     }
 }
