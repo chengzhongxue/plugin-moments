@@ -10,7 +10,10 @@ import jakarta.annotation.Nonnull;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Predicate;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -30,11 +33,13 @@ import run.halo.app.extension.PageRequestImpl;
 import run.halo.app.extension.ReactiveExtensionClient;
 import run.halo.app.extension.router.selector.FieldSelector;
 import run.halo.app.infra.AnonymousUserConst;
+import run.halo.app.infra.utils.JsonUtils;
 import run.halo.app.theme.finders.Finder;
 import run.halo.moments.Moment;
 import run.halo.moments.Stats;
 import run.halo.moments.finders.MomentFinder;
 import run.halo.moments.util.MeterUtils;
+import run.halo.moments.util.SortUtils;
 import run.halo.moments.vo.ContributorVo;
 import run.halo.moments.vo.MomentTagVo;
 import run.halo.moments.vo.MomentVo;
@@ -61,6 +66,14 @@ public class MomentFinderImpl implements MomentFinder {
     public Mono<ListResult<MomentVo>> list(Integer page, Integer size) {
         var pageRequest = PageRequestImpl.of(pageNullSafe(page), sizeNullSafe(size), defaultSort());
         return pageMoment(null, pageRequest);
+    }
+
+    @Override
+    public Mono<ListResult<MomentVo>> list(Map<String, Object> params) {
+        var query = Optional.ofNullable(params)
+            .map(map -> JsonUtils.mapToObject(map, MomentQuery.class))
+            .orElseGet(MomentQuery::new);
+        return pageMoment(query.toListOptions().getFieldSelector(), query.toPageRequest());
     }
 
     static Sort defaultSort() {
@@ -189,11 +202,11 @@ public class MomentFinderImpl implements MomentFinder {
             .defaultIfEmpty(Stats.empty());
     }
 
-    int pageNullSafe(Integer page) {
+    static int pageNullSafe(Integer page) {
         return ObjectUtils.defaultIfNull(page, 1);
     }
 
-    int sizeNullSafe(Integer size) {
+    static int sizeNullSafe(Integer size) {
         return ObjectUtils.defaultIfNull(size, 10);
     }
 
@@ -227,10 +240,36 @@ public class MomentFinderImpl implements MomentFinder {
             });
     }
 
+
     Mono<String> currentUserName() {
         return ReactiveSecurityContextHolder.getContext()
             .map(SecurityContext::getAuthentication)
             .map(Principal::getName)
             .filter(name -> !AnonymousUserConst.isAnonymousUser(name));
+    }
+
+    @Data
+    public static class MomentQuery {
+        private Integer page;
+        private Integer size;
+        private String tagName;
+        private String owner;
+        private List<String> sort;
+
+        public ListOptions toListOptions() {
+            var builder = ListOptions.builder();
+            if (StringUtils.isNotBlank(tagName)) {
+                builder.andQuery(equal("spec.tags", tagName));
+            }
+            if (StringUtils.isNotBlank(owner)) {
+                builder.andQuery(equal("spec.owner", owner));
+            }
+            return builder.build();
+        }
+
+        public PageRequest toPageRequest() {
+            return PageRequestImpl.of(pageNullSafe(getPage()),
+                sizeNullSafe(getSize()), SortUtils.resolve(sort).and(defaultSort()));
+        }
     }
 }
