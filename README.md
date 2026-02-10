@@ -88,6 +88,34 @@ halo:
 
 最后重启 Halo 项目即可。
 
+## 公开 API
+
+### 查询瞬间列表
+
+`/apis/api.moment.halo.run/v1alpha1/moments`
+
+**参数**：
+
+1. page: int - 分页页码，从 1 开始
+2. size: int - 分页条数
+3. tag:string - 标签
+4. ownerName:string - 创建者用户名 name
+5. startDate:string - 开始时间 通过时间区间筛选发布时间
+6. endDate:string - 结束时间
+7. sort:string[] - 排序字段，格式为 字段名,排序方式，排序方式可选值为 asc 或 desc，如 spec.releaseTime,desc，
+
+**返回值类型**：[ListResult\<MomentVo>](#listresult-momentvo)
+
+### 查询瞬间详情
+
+`/apis/api.moment.halo.run/v1alpha1/moments/{name}`
+
+**参数**：
+
+1. name:string - 瞬间的唯一标识 name
+
+**返回值类型**：[#MomentVo](#momentvo)
+
 ## 主题适配
 
 目前此插件为主题端提供了 `/moments` 路由，模板为 `moments.html`，也提供了 [Finder API](https://docs.halo.run/developer-guide/theme/finder-apis)，可以将瞬间列表渲染到任何地方。
