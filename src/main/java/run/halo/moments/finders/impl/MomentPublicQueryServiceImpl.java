@@ -57,7 +57,8 @@ public class MomentPublicQueryServiceImpl implements MomentPublicQueryService {
             );
     }
 
-    private Mono<MomentVo> getMomentVo(@Nonnull Moment moment) {
+    @Override
+    public Mono<MomentVo> getMomentVo(@Nonnull Moment moment) {
         MomentVo momentVo = MomentVo.from(moment);
         return Mono.just(momentVo)
             .flatMap(mv -> populateStats(momentVo)
