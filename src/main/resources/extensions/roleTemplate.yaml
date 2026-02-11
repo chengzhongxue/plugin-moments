@@ -91,6 +91,7 @@ metadata:
   labels:
     halo.run/role-template: "true"
     halo.run/hidden: "true"
+    rbac.authorization.halo.run/aggregate-to-anonymous: "true"
 rules:
   - apiGroups: [ "api.moment.halo.run" ]
     resources: [ "moments" ]
